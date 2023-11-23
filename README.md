@@ -16,17 +16,17 @@ Celery (для асинхронных задач)
 Установка
 Клонируйте репозиторий и установите зависимости:
 
-bash
-Copy code
-git clone https://example.com/habit-tracker.git
+
+git clone https://github.com/sergeymalyaroff/COURSE_WORK_7_DRF_SKYPRO_MALYAROFF
 cd habit-tracker
 pip install -r requirements.txt
+
+
 Настройка базы данных
 
 Создайте базу данных PostgreSQL и настройте параметры в settings.py:
 
-python
-Copy code
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -39,14 +39,13 @@ DATABASES = {
 }
 Запустите миграции:
 
-bash
-Copy code
+
 python manage.py migrate
 Запуск проекта
 
-bash
-Copy code
+
 python manage.py runserver
+
 Использование
 
 После запуска сервера Django, вы можете взаимодействовать с API через эндпоинты, определенные в habits/urls.py.
@@ -59,9 +58,9 @@ python manage.py runserver
 
 Запустите тесты, чтобы убедиться в корректности работы:
 
-bash
-Copy code
+
 python manage.py test
+
 Развертывание
 
 Для развертывания в продакшн используйте соответствующие инструменты и сервисы, такие как Heroku, AWS или Docker.
