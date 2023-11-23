@@ -1,3 +1,5 @@
+#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habits/views.py
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404

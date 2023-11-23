@@ -18,6 +18,7 @@ db.sqlite3
 *.pyd
 *.db
 *.sqlite3-journal
+.env
 
 # Файлы локализации
 *.mo
@@ -47,3 +48,5 @@ __pycache__
 *.swp
 Thumbs.db
 Desktop.ini
+
+

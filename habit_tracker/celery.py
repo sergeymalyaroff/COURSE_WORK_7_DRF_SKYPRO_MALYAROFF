@@ -1,3 +1,5 @@
+#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/celery.py
+
 import os
 from celery import Celery
 

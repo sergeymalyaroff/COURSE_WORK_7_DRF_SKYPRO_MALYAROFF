@@ -1,4 +1,8 @@
 psycopg2-binary
 djangorestframework
 celery
+python-telegram-bot
+python-dotenv
+django-cors-headers
+drf-yasg
 
