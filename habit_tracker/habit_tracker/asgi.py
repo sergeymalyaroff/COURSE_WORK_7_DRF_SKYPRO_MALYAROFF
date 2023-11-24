@@ -1,3 +1,5 @@
+#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habit_tracker/asgi.py
+
 """
 ASGI config for habit_tracker project.
 

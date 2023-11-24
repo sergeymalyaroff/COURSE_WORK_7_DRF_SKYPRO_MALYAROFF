@@ -12,6 +12,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.shortcuts import render
+from .models import Habit
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import HabitSerializer
 
 @csrf_exempt
 @require_POST
@@ -150,4 +155,28 @@ def delete_habit(request, habit_id):
 def get_habits(request):
     # Проверка, что запрос является GET-запросом
     if request.method == 'GET':
-        # Получение списка привычек текущего пользователя с пагина
+        # Получение списка привычек текущего пользователя
+        habits = Habit.objects.filter(user=request.user)
+
+        # Настройка пагинации
+        paginator = PageNumberPagination()
+        paginator.page_size = 5
+        result_page = paginator.paginate_queryset(habits, request)
+
+        # Сериализация данных
+        serializer = HabitSerializer(result_page, many=True, context={'request': request})
+
+        # Возвращение пагинированного ответа
+        return paginator.get_paginated_response(serializer.data)
+
+
+
+@api_view(['GET'])
+def get_public_habits(request):
+    """
+    Возвращает список всех публичных привычек.
+    """
+    if request.method == 'GET':
+        habits = Habit.objects.filter(is_public=True)
+        serializer = HabitSerializer(habits, many=True)
+        return Response(serializer.data)
