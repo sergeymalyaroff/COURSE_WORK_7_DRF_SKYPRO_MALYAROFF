@@ -3,20 +3,15 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
-from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 import json
-from django.shortcuts import render
-from .models import Habit
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from .models import Habit, UserProfile
 from .serializers import HabitSerializer
+from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from .tasks import send_habit_notification
 
 @csrf_exempt
 @require_POST
@@ -48,135 +43,96 @@ def register(request):
     else:
         return JsonResponse({'error': 'Registration failed'})
 
-
-from .models import Habit
-
-# Эндпоинт для создания новой привычки
 @login_required
 @require_http_methods(["POST"])
 def create_habit(request):
-    # Проверка, что запрос является POST-запросом
-    if request.method == 'POST':
-        # Получение данных из POST-запроса
-        data = request.POST
+    # Получение данных из POST-запроса
+    data = request.POST
 
-        # Извлечение необходимых данных из запроса
-        user = request.user
-        action = data.get('action')
-        time = data.get('time')
-        place = data.get('place')
-        is_pleasurable = data.get('is_pleasurable')
-        is_public = data.get('is_public')
-        related_habit_id = data.get('related_habit_id')
-        reward = data.get('reward')
-        estimated_time = data.get('estimated_time')
+    # Извлечение необходимых данных из запроса
+    user = request.user
+    action = data.get('action')
+    time = data.get('time')
+    place = data.get('place')
+    is_pleasurable = data.get('is_pleasurable')
+    is_public = data.get('is_public')
+    related_habit_id = data.get('related_habit_id')
+    reward = data.get('reward')
+    estimated_time = data.get('estimated_time')
 
-        # Создание новой привычки в базе данных
-        habit = Habit.objects.create(
-            user=user,
-            action=action,
-            time=time,
-            place=place,
-            is_pleasurable=is_pleasurable,
-            is_public=is_public,
-            related_habit_id=related_habit_id,
-            reward=reward,
-            estimated_time=estimated_time
-        )
+    # Создание новой привычки в базе данных
+    habit = Habit.objects.create(
+        user=user,
+        action=action,
+        time=time,
+        place=place,
+        is_pleasurable=is_pleasurable,
+        is_public=is_public,
+        related_habit_id=related_habit_id,
+        reward=reward,
+        estimated_time=estimated_time
+    )
 
-        # Возвращение JSON-ответа с информацией о созданной привычке
-        return JsonResponse({'message': 'Habit created successfully', 'habit_id': habit.id})
-    else:
-        # Возвращение ошибки, если запрос не является POST-запросом
-        return JsonResponse({'error': 'Only POST requests are allowed'})
+    # Отправка уведомления в Telegram
+    user_profile = UserProfile.objects.get(user=user)
+    if user_profile.telegram_chat_id:
+        send_habit_notification.delay(user_profile.telegram_chat_id, f"Создана новая привычка: {action}")
 
-# Эндпоинт для редактирования существующей привычки
+    return JsonResponse({'message': 'Habit created successfully', 'habit_id': habit.id})
+
 @login_required
 @require_http_methods(["PUT"])
 def edit_habit(request, habit_id):
-    # Проверка, что запрос является PUT-запросом
-    if request.method == 'PUT':
-        # Получение привычки по ее ID или возврат ошибки, если привычка не найдена
-        habit = get_object_or_404(Habit, id=habit_id)
+    habit = get_object_or_404(Habit, id=habit_id)
+    if habit.user == request.user:
+        data = request.POST
+        habit.action = data.get('action', habit.action)
+        habit.time = data.get('time', habit.time)
+        habit.place = data.get('place', habit.place)
+        habit.is_pleasurable = data.get('is_pleasurable', habit.is_pleasurable)
+        habit.is_public = data.get('is_public', habit.is_public)
+        habit.related_habit_id = data.get('related_habit_id', habit.related_habit_id)
+        habit.reward = data.get('reward', habit.reward)
+        habit.estimated_time = data.get('estimated_time', habit.estimated_time)
+        habit.save()
 
-        # Проверка, что пользователь, выполняющий запрос, является владельцем привычки
-        if habit.user == request.user:
-            # Получение данных из PUT-запроса
-            data = request.POST
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.telegram_chat_id:
+            send_habit_notification.delay(user_profile.telegram_chat_id, f"Привычка обновлена: {habit.action}")
 
-            # Обновление данных привычки
-            habit.action = data.get('action', habit.action)
-            habit.time = data.get('time', habit.time)
-            habit.place = data.get('place', habit.place)
-            habit.is_pleasurable = data.get('is_pleasurable', habit.is_pleasurable)
-            habit.is_public = data.get('is_public', habit.is_public)
-            habit.related_habit_id = data.get('related_habit_id', habit.related_habit_id)
-            habit.reward = data.get('reward', habit.reward)
-            habit.estimated_time = data.get('estimated_time', habit.estimated_time)
-
-            # Сохранение обновленных данных в базе данных
-            habit.save()
-
-            # Возвращение JSON-ответа с информацией о обновленной привычке
-            return JsonResponse({'message': 'Habit updated successfully'})
-        else:
-            # Возвращение ошибки, если пользователь не является владельцем привычки
-            return JsonResponse({'error': 'You do not have permission to edit this habit'})
+        return JsonResponse({'message': 'Habit updated successfully'})
     else:
-        # Возвращение ошибки, если запрос не является PUT-запросом
-        return JsonResponse({'error': 'Only PUT requests are allowed'})
+        return JsonResponse({'error': 'You do not have permission to edit this habit'})
 
-# Эндпоинт для удаления привычки
 @login_required
 @require_http_methods(["DELETE"])
 def delete_habit(request, habit_id):
-    # Проверка, что запрос является DELETE-запросом
-    if request.method == 'DELETE':
-        # Получение привычки по ее ID или возврат ошибки, если привычка не найдена
-        habit = get_object_or_404(Habit, id=habit_id)
+    habit = get_object_or_404(Habit, id=habit_id)
+    if habit.user == request.user:
+        habit.delete()
 
-        # Проверка, что пользователь, выполняющий запрос, является владельцем привычки
-        if habit.user == request.user:
-            # Удаление привычки из базы данных
-            habit.delete()
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.telegram_chat_id:
+            send_habit_notification.delay(user_profile.telegram_chat_id, f"Привычка удалена: {habit.action}")
 
-            # Возвращение JSON-ответа с сообщением об успешном удалении
-            return JsonResponse({'message': 'Habit deleted successfully'})
-        else:
-            # Возвращение ошибки, если пользователь не является владельцем привычки
-            return JsonResponse({'error': 'You do not have permission to delete this habit'})
+        return JsonResponse({'message': 'Habit deleted successfully'})
     else:
-        # Возвращение ошибки, если запрос не является DELETE-запросом
-        return JsonResponse({'error': 'Only DELETE requests are allowed'})
-
-# Эндпоинт для получения списка привычек текущего пользователя с пагинацией
-@login_required
-@require_http_methods(["GET"])
-def get_habits(request):
-    # Проверка, что запрос является GET-запросом
-    if request.method == 'GET':
-        # Получение списка привычек текущего пользователя
-        habits = Habit.objects.filter(user=request.user)
-
-        # Настройка пагинации
-        paginator = PageNumberPagination()
-        paginator.page_size = 5
-        result_page = paginator.paginate_queryset(habits, request)
-
-        # Сериализация данных
-        serializer = HabitSerializer(result_page, many=True, context={'request': request})
-
-        # Возвращение пагинированного ответа
-        return paginator.get_paginated_response(serializer.data)
-
-
+        return JsonResponse({'error': 'You do not have permission to delete this habit'})
 
 @api_view(['GET'])
 def get_public_habits(request):
-    """
-    Возвращает список всех публичных привычек.
-    """
-    if request.method == 'GET':
-        habits = Habit.objects.filter(is_public=True)
-        serializer = HabitSerializer(habits, many=True)
-        return Response(serializer.data)
+    habits = Habit.objects.filter(is_public=True)
+    serializer = HabitSerializer(habits, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_habits(request):
+    # Получение списка привычек
+    habits = Habit.objects.all()  # или любой другой запрос к модели Habit
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(habits, request)
+    if page is not None:
+        serializer = HabitSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    serializer = HabitSerializer(habits, many=True)
+    return Response(serializer.data)
