@@ -8,7 +8,8 @@ from django.contrib.auth import login, authenticate
 import json
 from .models import Habit, UserProfile
 from .serializers import HabitSerializer
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from .tasks import send_habit_notification
@@ -16,28 +17,24 @@ from .tasks import send_habit_notification
 @csrf_exempt
 @require_POST
 def register(request):
-    # Парсинг данных из JSON-запроса
+    """
+    Регистрация нового пользователя.
+    Парсит данные из JSON-запроса и создает нового пользователя.
+    """
     data = json.loads(request.body)
-
     username = data.get('username')
     password = data.get('password')
 
-    # Проверка, что обязательные поля были переданы
     if not username or not password:
         return JsonResponse({'error': 'Both username and password are required'})
 
-    # Проверка, что пользователь с таким именем не существует
     if User.objects.filter(username=username).exists():
         return JsonResponse({'error': 'Username already exists'})
 
-    # Создание нового пользователя
     user = User.objects.create_user(username=username, password=password)
-
-    # Аутентификация пользователя
     user = authenticate(request, username=username, password=password)
 
     if user is not None:
-        # Авторизация пользователя
         login(request, user)
         return JsonResponse({'message': 'Registration successful'})
     else:
@@ -46,10 +43,11 @@ def register(request):
 @login_required
 @require_http_methods(["POST"])
 def create_habit(request):
-    # Получение данных из POST-запроса
+    """
+    Создание новой привычки.
+    Получает данные из POST-запроса и создает новую привычку для пользователя.
+    """
     data = request.POST
-
-    # Извлечение необходимых данных из запроса
     user = request.user
     action = data.get('action')
     time = data.get('time')
@@ -60,7 +58,6 @@ def create_habit(request):
     reward = data.get('reward')
     estimated_time = data.get('estimated_time')
 
-    # Создание новой привычки в базе данных
     habit = Habit.objects.create(
         user=user,
         action=action,
@@ -73,7 +70,6 @@ def create_habit(request):
         estimated_time=estimated_time
     )
 
-    # Отправка уведомления в Telegram
     user_profile = UserProfile.objects.get(user=user)
     if user_profile.telegram_chat_id:
         send_habit_notification.delay(user_profile.telegram_chat_id, f"Создана новая привычка: {action}")
@@ -83,6 +79,10 @@ def create_habit(request):
 @login_required
 @require_http_methods(["PUT"])
 def edit_habit(request, habit_id):
+    """
+    Редактирование существующей привычки.
+    Обновляет данные привычки, если пользователь имеет к ней доступ.
+    """
     habit = get_object_or_404(Habit, id=habit_id)
     if habit.user == request.user:
         data = request.POST
@@ -107,6 +107,10 @@ def edit_habit(request, habit_id):
 @login_required
 @require_http_methods(["DELETE"])
 def delete_habit(request, habit_id):
+    """
+    Удаление привычки.
+    Удаляет привычку, если пользователь имеет к ней доступ.
+    """
     habit = get_object_or_404(Habit, id=habit_id)
     if habit.user == request.user:
         habit.delete()
@@ -120,15 +124,24 @@ def delete_habit(request, habit_id):
         return JsonResponse({'error': 'You do not have permission to delete this habit'})
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_public_habits(request):
+    """
+    Получение списка публичных привычек.
+    Возвращает список всех публичных привычек для аутентифицированных пользователей.
+    """
     habits = Habit.objects.filter(is_public=True)
     serializer = HabitSerializer(habits, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_habits(request):
-    # Получение списка привычек
-    habits = Habit.objects.all()  # или любой другой запрос к модели Habit
+    """
+    Получение списка привычек пользователя.
+    Возвращает список привычек, созданных аутентифицированным пользователем, с пагинацией.
+    """
+    habits = Habit.objects.filter(user=request.user)
     paginator = PageNumberPagination()
     page = paginator.paginate_queryset(habits, request)
     if page is not None:
