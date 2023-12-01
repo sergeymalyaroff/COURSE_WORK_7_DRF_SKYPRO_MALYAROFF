@@ -5,4 +5,16 @@ python-telegram-bot
 python-dotenv
 django-cors-headers
 drf-yasg
+flake8
+autopep8
+black
 
+
+flake8 "COURSE_WORK_7_DRF_SKYPRO_MALYAROFF/habit_tracker/"
+flake8 habit_tracker
+flake8 habit_tracker/habits/
+
+autopep8 --in-place --aggressive --aggressive habit_tracker/habit_tracker/
+autopep8 --in-place --aggressive --aggressive -r habit_tracker/habits/
+black habit_tracker
+black habit_tracker/habit_tracker/

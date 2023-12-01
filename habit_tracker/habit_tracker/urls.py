@@ -1,4 +1,4 @@
-#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habit_tracker/urls.py
+# COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habit_tracker/urls.py
 
 """
 URL configuration for habit_tracker project.
@@ -23,20 +23,17 @@ from drf_yasg import openapi
 from rest_framework import permissions
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="API Documentation",
-      default_version='v1',
-      description="Documentation for the API",
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+    openapi.Info(
+        title="API Documentation",
+        default_version="v1",
+        description="Documentation for the API",
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
 )
 
 
-
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('habits/', include('habits.urls')),
-
+    path("admin/", admin.site.urls),
+    path("habits/", include("habits.urls")),
 ]

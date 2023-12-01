@@ -1,6 +1,7 @@
-#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habits/telegram_bot.py
+# COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habits/telegram_bot.py
 
 from telegram.ext import Updater, CommandHandler
+
 
 def start(update, context):
     """
@@ -8,7 +9,11 @@ def start(update, context):
     Вызывается, когда пользователь отправляет команду /start.
     Отправляет приветственное сообщение пользователю.
     """
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я ваш бот для отслеживания привычек.")
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Привет! Я ваш бот для отслеживания привычек.",
+    )
+
 
 def help_command(update, context):
     """
@@ -16,7 +21,8 @@ def help_command(update, context):
     Вызывается, когда пользователь отправляет команду /help.
     Отправляет пользователю информацию о том, как использовать бота.
     """
-    update.message.reply_text('Используйте /start для начала работы с ботом.')
+    update.message.reply_text("Используйте /start для начала работы с ботом.")
+
 
 def send_habit_notification(bot, chat_id, message):
     """
@@ -27,12 +33,13 @@ def send_habit_notification(bot, chat_id, message):
     """
     bot.send_message(chat_id=chat_id, text=message)
 
+
 def main():
     """
     Основная функция для запуска бота.
     Создает экземпляр Updater и добавляет обработчики команд.
     """
-    updater = Updater(token='TELEGRAM_BOT_TOKEN', use_context=True)
+    updater = Updater(token="TELEGRAM_BOT_TOKEN", use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
@@ -41,5 +48,6 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

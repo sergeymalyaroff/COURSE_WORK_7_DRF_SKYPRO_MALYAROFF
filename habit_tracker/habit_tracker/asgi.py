@@ -1,4 +1,4 @@
-#COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habit_tracker/asgi.py
+# COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/habit_tracker/asgi.py
 
 """
 ASGI config for habit_tracker project.
@@ -13,6 +13,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'habit_tracker.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "habit_tracker.settings")
 
 application = get_asgi_application()
