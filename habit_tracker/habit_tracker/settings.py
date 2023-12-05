@@ -81,15 +81,15 @@ WSGI_APPLICATION = "habit_tracker.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Настройки базы данных
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",  # Имя базы данных
-        "USER": "sergejmalarov",  # Имя пользователя базы данных
-        "PASSWORD": "renuar",  # Пароль пользователя базы данных
-        # Хост (обычно 'localhost' для локального сервера)
-        "HOST": "localhost",
-        "PORT": "",  # Порт (обычно пустой для порта по умолчанию 5432)
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql', # Или другой движок
+        'NAME': os.getenv('DB_NAME', 'default_db_name'),
+        'USER': os.getenv('DB_USER', 'default_db_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'default_db_password'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 

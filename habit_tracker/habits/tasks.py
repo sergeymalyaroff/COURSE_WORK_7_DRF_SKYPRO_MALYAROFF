@@ -1,7 +1,7 @@
 # habits.tasks.py
 
 from celery import shared_task
-from .models import Habit, UserProfile
+from .models import Habit,
 from .telegram_bot import send_habit_notification
 from django.utils import timezone
 
@@ -15,4 +15,5 @@ def send_habit_notifications():
     for habit in habits:
         if habit.user.userprofile.telegram_chat_id:
             message = f"Не забудьте о привычке: {habit.name}"
-            send_habit_notification(habit.user.userprofile.telegram_chat_id, message)
+            send_habit_notification(
+                habit.user.userprofile.telegram_chat_id, message)

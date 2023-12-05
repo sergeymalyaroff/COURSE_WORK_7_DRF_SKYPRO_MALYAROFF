@@ -31,29 +31,28 @@ class Habit(models.Model):
         # Исключение одновременного выбора связанной привычки и указания
         # вознаграждения
         if self.related_habit and self.reward:
-            raise ValidationError(_("Cannot have both a related habit and a reward."))
+            raise ValidationError(
+                _("Cannot have both a related habit and a reward."))
         # Время выполнения не больше 120 секунд
         if self.time_required > 120:
-            raise ValidationError(_("Execution time must not exceed 120 seconds."))
+            raise ValidationError(
+                ("Execution time must not exceed 120 seconds."))
 
         # Связанные привычки могут быть только приятными
         if self.related_habit and not self.related_habit.is_nice_habit:
-            raise ValidationError(_("Related habit must be a nice habit."))
+            raise ValidationError(("Related habit must be a nice habit."))
 
         # У приятной привычки не может быть вознаграждения или связанной
         # привычки
         if self.is_nice_habit and (self.reward or self.related_habit):
             raise ValidationError(
-                _("A nice habit cannot have a reward or a related habit.")
+                ("A nice habit cannot have a reward or a related habit.")
             )
 
         # Нельзя выполнять привычку реже, чем 1 раз в 7 дней
         if self.frequency > 7:
             raise ValidationError(
-                _(
-                    "The habit cannot be performed less frequently than once every 7 days."
-                )
-            )
+                ("The habit cannot be performed every 7 days."))
 
     def save(self, *args, **kwargs):
         self.clean()

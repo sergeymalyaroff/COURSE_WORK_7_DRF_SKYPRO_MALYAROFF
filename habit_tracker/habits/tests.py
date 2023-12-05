@@ -13,7 +13,9 @@ class ModelTestCase(TestCase):
 
     def setUp(self):
         """Настройка тестового окружения."""
-        user = User.objects.create(username="testuser", password="testpassword")
+        user = User.objects.create(
+            username="testuser",
+            password="testpassword")
         self.habit_action = "Утренняя пробежка"
         self.habit = Habit(
             user=user,
@@ -71,7 +73,11 @@ class ViewTestCase(TestCase):
     def test_api_can_get_a_habit(self):
         """Тест на получение привычки через API."""
         habit = Habit.objects.get(id=1)
-        response = self.client.get("/habits/", kwargs={"pk": habit.id}, format="json")
+        response = self.client.get(
+            "/habits/",
+            kwargs={
+                "pk": habit.id},
+            format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, habit)
@@ -81,15 +87,23 @@ class ViewTestCase(TestCase):
         habit = Habit.objects.get()
         change_habit = {"action": "Вечерняя пробежка"}
         res = self.client.put(
-            reverse("details", kwargs={"pk": habit.id}), change_habit, format="json"
-        )
+            reverse(
+                "details",
+                kwargs={
+                    "pk": habit.id}),
+            change_habit,
+            format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_api_can_delete_habit(self):
         """Тест на удаление привычки через API."""
         habit = Habit.objects.get()
         response = self.client.delete(
-            reverse("details", kwargs={"pk": habit.id}), format="json", follow=True
-        )
+            reverse(
+                "details",
+                kwargs={
+                    "pk": habit.id}),
+            format="json",
+            follow=True)
 
         self.assertEquals(response.status_code, status.HTTP_204_NO_CONTENT)

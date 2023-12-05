@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
 import json
 from .models import Habit, UserProfile
 from .serializers import HabitSerializer
@@ -14,10 +16,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from .tasks import send_habit_notification
 
-
 @csrf_exempt
 @require_POST
+
+
 def register(request):
+
     """
     Регистрация нового пользователя.
     Парсит данные из JSON-запроса и создает нового пользователя.
@@ -27,19 +31,19 @@ def register(request):
     password = data.get("password")
 
     if not username or not password:
-        return JsonResponse({"error": "Both username and password are required"})
+        return JsonResponse({'error': 'Both username and password'})
 
     if User.objects.filter(username=username).exists():
-        return JsonResponse({"error": "Username already exists"})
+        return JsonResponse({'error': 'Username already exists'})
 
     user = User.objects.create_user(username=username, password=password)
     user = authenticate(request, username=username, password=password)
 
     if user is not None:
         login(request, user)
-        return JsonResponse({"message": "Registration successful"})
+        return JsonResponse({'message': 'Registration successful'})
     else:
-        return JsonResponse({"error": "Registration failed"})
+        return JsonResponse({'error': 'Registration failed'})
 
 
 @login_required
@@ -69,16 +73,15 @@ def create_habit(request):
         is_public=is_public,
         related_habit_id=related_habit_id,
         reward=reward,
-        estimated_time=estimated_time,
+        estimated_time=estimated_time
     )
 
     user_profile = UserProfile.objects.get(user=user)
     if user_profile.telegram_chat_id:
         send_habit_notification.delay(
-            user_profile.telegram_chat_id, f"Создана новая привычка: {action}"
-        )
+            user_profile.telegram_chat_id, f"Создана новая привычка: {action}")
 
-    return JsonResponse({"message": "Habit created successfully", "habit_id": habit.id})
+    return JsonResponse({'message': 'Habit created', 'habit_id': habit.id})
 
 
 @login_required
@@ -104,12 +107,11 @@ def edit_habit(request, habit_id):
         user_profile = UserProfile.objects.get(user=request.user)
         if user_profile.telegram_chat_id:
             send_habit_notification.delay(
-                user_profile.telegram_chat_id, f"Привычка обновлена: {habit.action}"
-            )
+                user_profile.telegram_chat_id, f"Привычка обновлена: {habit.action}")
 
-        return JsonResponse({"message": "Habit updated successfully"})
+        return JsonResponse({'message': 'Habit updated successfully'})
     else:
-        return JsonResponse({"error": "You do not have permission to edit this habit"})
+        return JsonResponse({'error': 'You do not have permission'})
 
 
 @login_required
@@ -126,14 +128,11 @@ def delete_habit(request, habit_id):
         user_profile = UserProfile.objects.get(user=request.user)
         if user_profile.telegram_chat_id:
             send_habit_notification.delay(
-                user_profile.telegram_chat_id, f"Привычка удалена: {habit.action}"
-            )
+                user_profile.telegram_chat_id, f"Привычка удалена: {habit.action}")
 
-        return JsonResponse({"message": "Habit deleted successfully"})
+        return JsonResponse({'message': 'Habit deleted successfully'})
     else:
-        return JsonResponse(
-            {"error": "You do not have permission to delete this habit"}
-        )
+        return JsonResponse({'error': 'You do not have permission to delete this habit'})
 
 
 @api_view(["GET"])
