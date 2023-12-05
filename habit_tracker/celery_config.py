@@ -1,4 +1,4 @@
-# COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/celery.py
+# COURSE_WORK_&_DRF_SKYPRO_MALYAROFF/habit_tracker/celery_config.py
 
 import os
 from celery import Celery

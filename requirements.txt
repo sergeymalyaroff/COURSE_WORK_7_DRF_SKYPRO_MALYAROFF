@@ -8,5 +8,6 @@ drf-yasg
 flake8
 autopep8
 black
+django-cors-headers
 
 
